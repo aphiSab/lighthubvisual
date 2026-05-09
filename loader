@@ -1,30 +1,26 @@
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 
 pcall(function()
-    if CoreGui:FindFirstChild("LightHubVisualLoader") then
-        CoreGui.LightHubVisualLoader:Destroy()
+    if CoreGui:FindFirstChild("LightHubGuiVisualOnly") then
+        CoreGui.LightHubGuiVisualOnly:Destroy()
     end
 end)
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "LightHubVisualLoader"
-gui.Parent = CoreGui
-gui.IgnoreGuiInset = true
-gui.ResetOnSpawn = false
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "LightHubGuiVisualOnly"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = CoreGui
 
--- COLORS
-local BG = Color3.fromRGB(10,10,12)
-local CARD = Color3.fromRGB(19,19,23)
-local PANEL = Color3.fromRGB(24,24,28)
-local THEME = Color3.fromRGB(255,255,0)
-local THEME_SOFT = Color3.fromRGB(255,230,120)
-local WHITE = Color3.fromRGB(245,245,245)
-local DIM = Color3.fromRGB(38,22,12)
+local ThemeColor = Color3.fromRGB(255, 255, 0)
+local Panel = Color3.fromRGB(25, 25, 25)
+local TextWhite = Color3.fromRGB(255, 255, 255)
+local Grey = Color3.fromRGB(45, 45, 45)
 
-local function round(obj, r)
+local function corner(obj, r)
     local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0,r)
+    c.CornerRadius = UDim.new(0, r)
     c.Parent = obj
 end
 
@@ -34,161 +30,297 @@ local function stroke(obj, color, thickness, transparency)
     s.Thickness = thickness
     s.Transparency = transparency or 0
     s.Parent = obj
+    return s
 end
 
-local function tween(obj, time, props)
-    TweenService:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), props):Play()
-end
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 240, 0, 0)
+mainFrame.Position = UDim2.new(1, -255, 0.5, 0)
+mainFrame.AnchorPoint = Vector2.new(0, 0.5)
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mainFrame.BackgroundTransparency = 0.1
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.ClipsDescendants = true
+mainFrame.Parent = screenGui
+corner(mainFrame, 10)
 
--- BACKGROUND
-local bg = Instance.new("Frame", gui)
-bg.Size = UDim2.new(1,0,1,0)
-bg.BackgroundColor3 = BG
-bg.BorderSizePixel = 0
+TweenService:Create(
+    mainFrame,
+    TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+    {Size = UDim2.new(0, 240, 0, 320)}
+):Play()
 
--- MAIN CARD
-local card = Instance.new("Frame", bg)
-card.Size = UDim2.new(0,430,0,285)
-card.Position = UDim2.new(0.5,-215,0.5,-142)
-card.BackgroundColor3 = CARD
-card.BorderSizePixel = 0
-card.ClipsDescendants = true
-round(card,18)
+local mainStroke = stroke(mainFrame, ThemeColor, 2.5, 0)
 
--- GLOWING BORDER (wave)
-local cardStroke = stroke(card, THEME, 2, 0)
-local wave = Instance.new("UIGradient", cardStroke)
-wave.Color = ColorSequence.new({ColorSequenceKeypoint.new(0,THEME), ColorSequenceKeypoint.new(0.5,THEME_SOFT), ColorSequenceKeypoint.new(1,THEME)})
+local uiGradient = Instance.new("UIGradient")
+uiGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.00, ThemeColor),
+    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 0, 0)),
+    ColorSequenceKeypoint.new(1.00, ThemeColor)
+})
+uiGradient.Parent = mainStroke
 
 task.spawn(function()
-    while gui.Parent do
-        for i=0,360,2 do
-            wave.Rotation = i
+    while screenGui.Parent do
+        for i = 0, 360, 2 do
+            uiGradient.Rotation = i
             task.wait(0.01)
         end
     end
 end)
 
--- TITLE
-local title = Instance.new("TextLabel", card)
-title.Size = UDim2.new(1,-40,0,36)
-title.Position = UDim2.new(0,20,0,24)
+local headerFrame = Instance.new("Frame")
+headerFrame.Size = UDim2.new(1, 0, 0, 30)
+headerFrame.BackgroundTransparency = 1
+headerFrame.Parent = mainFrame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(0.7, 0, 1, 0)
+title.Position = UDim2.new(0.05, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "LIGHT HUB LOADER"
-title.TextColor3 = THEME
-title.Font = Enum.Font.GothamBlack
-title.TextSize = 27
+title.Text = "LIGHT HUB"
+title.TextColor3 = ThemeColor
+title.TextSize = 18
+title.Font = Enum.Font.GothamBold
 title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = headerFrame
 
-local subtitle = Instance.new("TextLabel", card)
-subtitle.Size = UDim2.new(1,-40,0,20)
-subtitle.Position = UDim2.new(0,20,0,60)
-subtitle.BackgroundTransparency = 1
-subtitle.Text = "INITIALIZING..."
-subtitle.TextColor3 = THEME_SOFT
-subtitle.Font = Enum.Font.GothamBold
-subtitle.TextSize = 12
-subtitle.TextXAlignment = Enum.TextXAlignment.Left
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 25, 0, 25)
+closeBtn.Position = UDim2.new(1, -30, 0, 2)
+closeBtn.BackgroundTransparency = 1
+closeBtn.Text = "X"
+closeBtn.TextColor3 = ThemeColor
+closeBtn.TextSize = 16
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Parent = headerFrame
 
--- PROGRESS BAR
-local barBack = Instance.new("Frame", card)
-barBack.Size = UDim2.new(1,-40,0,10)
-barBack.Position = UDim2.new(0,20,1,-52)
-barBack.BackgroundColor3 = DIM
-barBack.BorderSizePixel = 0
-barBack.ClipsDescendants = true
-round(barBack,20)
+local minBtn = Instance.new("TextButton")
+minBtn.Size = UDim2.new(0, 25, 0, 25)
+minBtn.Position = UDim2.new(1, -55, 0, 2)
+minBtn.BackgroundTransparency = 1
+minBtn.Text = "-"
+minBtn.TextColor3 = ThemeColor
+minBtn.TextSize = 20
+minBtn.Font = Enum.Font.GothamBold
+minBtn.Parent = headerFrame
 
-local barFill = Instance.new("Frame", barBack)
-barFill.Size = UDim2.new(0,0,1,0)
-barFill.BackgroundColor3 = THEME
-barFill.BorderSizePixel = 0
-round(barFill,20)
+local dividerLine = Instance.new("Frame")
+dividerLine.Size = UDim2.new(0.85, 0, 0, 1)
+dividerLine.Position = UDim2.new(0.075, 0, 0, 30)
+dividerLine.BackgroundColor3 = ThemeColor
+dividerLine.BorderSizePixel = 0
+dividerLine.Parent = mainFrame
 
-local gradient = Instance.new("UIGradient", barFill)
-gradient.Color = ColorSequence.new({ColorSequenceKeypoint.new(0,THEME),ColorSequenceKeypoint.new(0.5,THEME_SOFT),ColorSequenceKeypoint.new(1,THEME)})
+local contentObjects = {}
 
-local percent = Instance.new("TextLabel", card)
-percent.Size = UDim2.new(0,55,0,20)
-percent.Position = UDim2.new(1,-75,1,-36)
-percent.BackgroundTransparency = 1
-percent.Text = "0%"
-percent.TextColor3 = THEME
-percent.Font = Enum.Font.GothamBold
-percent.TextSize = 13
-percent.TextXAlignment = Enum.TextXAlignment.Right
+local function makeToggle(text, y)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(0.9, 0, 0, 30)
+    container.Position = UDim2.new(0.05, 0, 0, y)
+    container.BackgroundTransparency = 1
+    container.Parent = mainFrame
+    table.insert(contentObjects, container)
 
--- MODULE BOXES
-local modules = {"UI SYSTEM","VISUALS","ANIMATION"}
-local moduleFrames = {}
-for i,name in ipairs(modules) do
-    local box = Instance.new("Frame", card)
-    box.Size = UDim2.new(0,120,0,68)
-    box.Position = UDim2.new(0,20+((i-1)*135),0,112)
-    box.BackgroundColor3 = PANEL
-    box.BorderSizePixel = 0
-    round(box,10)
-    stroke(box,THEME,1,0.35)
-
-    local label = Instance.new("TextLabel", box)
-    label.Size = UDim2.new(1,-16,0,18)
-    label.Position = UDim2.new(0,8,0,9)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -45, 1, 0)
     label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = WHITE
-    label.Font = Enum.Font.GothamBold
-    label.TextSize = 10
+    label.Text = text
+    label.TextColor3 = TextWhite
+    label.TextSize = 11
+    label.Font = Enum.Font.GothamMedium
     label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
 
-    local status = Instance.new("TextLabel", box)
-    status.Size = UDim2.new(1,-16,0,18)
-    status.Position = UDim2.new(0,8,0,30)
-    status.BackgroundTransparency = 1
-    status.Text = "Waiting"
-    status.TextColor3 = THEME
-    status.Font = Enum.Font.GothamBold
-    status.TextSize = 12
-    status.TextXAlignment = Enum.TextXAlignment.Left
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 38, 0, 20)
+    btn.Position = UDim2.new(1, -38, 0.5, -10)
+    btn.BackgroundColor3 = Grey
+    btn.Text = ""
+    btn.Parent = container
+    corner(btn, 50)
 
-    local miniBack = Instance.new("Frame", box)
-    miniBack.Size = UDim2.new(1,-16,0,4)
-    miniBack.Position = UDim2.new(0,8,1,-12)
-    miniBack.BackgroundColor3 = DIM
-    miniBack.BorderSizePixel = 0
-    miniBack.ClipsDescendants = true
-    round(miniBack,20)
+    local dot = Instance.new("Frame")
+    dot.Size = UDim2.new(0, 14, 0, 14)
+    dot.Position = UDim2.new(0, 3, 0.5, -7)
+    dot.BackgroundColor3 = TextWhite
+    dot.Parent = btn
+    corner(dot, 50)
 
-    local miniFill = Instance.new("Frame", miniBack)
-    miniFill.Size = UDim2.new(0,0,1,0)
-    miniFill.BackgroundColor3 = THEME
-    miniFill.BorderSizePixel = 0
-    round(miniFill,20)
+    local active = false
 
-    table.insert(moduleFrames,{status=status,fill=miniFill})
+    btn.MouseButton1Click:Connect(function()
+        active = not active
+
+        TweenService:Create(btn, TweenInfo.new(0.15), {
+            BackgroundColor3 = active and ThemeColor or Grey
+        }):Play()
+
+        TweenService:Create(dot, TweenInfo.new(0.15), {
+            Position = active and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+        }):Play()
+    end)
 end
 
--- LOADING ANIMATION
-local running = true
-task.spawn(function()
-    local totalDuration = 10 -- seconds for demo
-    local startTime = os.clock()
-    while running do
-        local elapsed = os.clock()-startTime
-        local progress = math.clamp(elapsed/totalDuration,0,1)
-        barFill.Size = UDim2.new(progress,0,1,0)
-        percent.Text = math.floor(progress*100).."%"
-        for i,mod in ipairs(moduleFrames) do
-            if progress*100 > i*30 then
-                mod.status.Text = "Active"
-                mod.fill.Size = UDim2.new(1,0,1,0)
-            else
-                mod.status.Text = "Loading"
-                mod.fill.Size = UDim2.new(progress,0,1,0)
-            end
-        end
-        if elapsed>=totalDuration then break end
-        task.wait(0.03)
+makeToggle("Half TP", 55)
+makeToggle("Auto Potion", 90)
+makeToggle("Speed Boost", 125)
+makeToggle("Anti Cancel", 160)
+
+local function makeButton(text, y)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 30)
+    btn.Position = UDim2.new(0.05, 0, 0, y)
+    btn.Text = text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.TextColor3 = TextWhite
+    btn.Parent = mainFrame
+    corner(btn, 8)
+    stroke(btn, ThemeColor, 1, 0.5)
+
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.15), {
+            BackgroundColor3 = Color3.fromRGB(45, 45, 20),
+            TextColor3 = ThemeColor
+        }):Play()
+    end)
+
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.15), {
+            BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+            TextColor3 = TextWhite
+        }):Play()
+    end)
+
+    table.insert(contentObjects, btn)
+    return btn
+end
+
+local freezeBtn = makeButton("Freeze Trade", 205)
+local acceptBtn = makeButton("Auto Accept", 240)
+
+local loadingBar = Instance.new("Frame")
+loadingBar.Size = UDim2.new(0.9, 0, 0, 12)
+loadingBar.Position = UDim2.new(0.05, 0, 0, 280)
+loadingBar.BackgroundColor3 = Panel
+loadingBar.Parent = mainFrame
+corner(loadingBar, 20)
+
+local loadingFill = Instance.new("Frame")
+loadingFill.BackgroundColor3 = ThemeColor
+loadingFill.Size = UDim2.new(0, 0, 1, 0)
+loadingFill.Parent = loadingBar
+corner(loadingFill, 20)
+
+local percentLabel = Instance.new("TextLabel")
+percentLabel.Size = UDim2.new(1, -6, 1, 0)
+percentLabel.BackgroundTransparency = 1
+percentLabel.Text = "0%"
+percentLabel.TextColor3 = TextWhite
+percentLabel.TextSize = 10
+percentLabel.Font = Enum.Font.GothamBold
+percentLabel.TextXAlignment = Enum.TextXAlignment.Right
+percentLabel.Parent = loadingBar
+
+local function runLoading()
+    loadingFill.Size = UDim2.new(0, 0, 1, 0)
+    percentLabel.Text = "0%"
+
+    for i = 0, 100 do
+        loadingFill.Size = UDim2.new(i / 100, 0, 1, 0)
+        percentLabel.Text = i .. "%"
+        task.wait(0.02)
     end
-    running = false
-    percent.Text = "100%"
+end
+
+freezeBtn.MouseButton1Click:Connect(function()
+    runLoading()
+end)
+
+acceptBtn.MouseButton1Click:Connect(function()
+    runLoading()
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    TweenService:Create(
+        mainFrame,
+        TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+        {Size = UDim2.new(0, 240, 0, 0)}
+    ):Play()
+
+    task.wait(0.3)
+    screenGui:Destroy()
+end)
+
+local minimized = false
+
+minBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+
+    if minimized then
+        for _, obj in ipairs(contentObjects) do
+            obj.Visible = false
+        end
+
+        loadingBar.Visible = false
+
+        minBtn.Text = "+"
+
+        TweenService:Create(
+            mainFrame,
+            TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+            {Size = UDim2.new(0, 240, 0, 38)}
+        ):Play()
+    else
+        minBtn.Text = "-"
+
+        TweenService:Create(
+            mainFrame,
+            TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+            {Size = UDim2.new(0, 240, 0, 320)}
+        ):Play()
+
+        task.wait(0.25)
+
+        for _, obj in ipairs(contentObjects) do
+            obj.Visible = true
+        end
+
+        loadingBar.Visible = true
+    end
+end)
+
+local dragging = false
+local dragStart
+local startPos
+
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
 end)
