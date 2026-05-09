@@ -1,0 +1,194 @@
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+pcall(function()
+    if CoreGui:FindFirstChild("LightHubVisualLoader") then
+        CoreGui.LightHubVisualLoader:Destroy()
+    end
+end)
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "LightHubVisualLoader"
+gui.Parent = CoreGui
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+
+-- COLORS
+local BG = Color3.fromRGB(10,10,12)
+local CARD = Color3.fromRGB(19,19,23)
+local PANEL = Color3.fromRGB(24,24,28)
+local THEME = Color3.fromRGB(255,255,0)
+local THEME_SOFT = Color3.fromRGB(255,230,120)
+local WHITE = Color3.fromRGB(245,245,245)
+local DIM = Color3.fromRGB(38,22,12)
+
+local function round(obj, r)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0,r)
+    c.Parent = obj
+end
+
+local function stroke(obj, color, thickness, transparency)
+    local s = Instance.new("UIStroke")
+    s.Color = color
+    s.Thickness = thickness
+    s.Transparency = transparency or 0
+    s.Parent = obj
+end
+
+local function tween(obj, time, props)
+    TweenService:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), props):Play()
+end
+
+-- BACKGROUND
+local bg = Instance.new("Frame", gui)
+bg.Size = UDim2.new(1,0,1,0)
+bg.BackgroundColor3 = BG
+bg.BorderSizePixel = 0
+
+-- MAIN CARD
+local card = Instance.new("Frame", bg)
+card.Size = UDim2.new(0,430,0,285)
+card.Position = UDim2.new(0.5,-215,0.5,-142)
+card.BackgroundColor3 = CARD
+card.BorderSizePixel = 0
+card.ClipsDescendants = true
+round(card,18)
+
+-- GLOWING BORDER (wave)
+local cardStroke = stroke(card, THEME, 2, 0)
+local wave = Instance.new("UIGradient", cardStroke)
+wave.Color = ColorSequence.new({ColorSequenceKeypoint.new(0,THEME), ColorSequenceKeypoint.new(0.5,THEME_SOFT), ColorSequenceKeypoint.new(1,THEME)})
+
+task.spawn(function()
+    while gui.Parent do
+        for i=0,360,2 do
+            wave.Rotation = i
+            task.wait(0.01)
+        end
+    end
+end)
+
+-- TITLE
+local title = Instance.new("TextLabel", card)
+title.Size = UDim2.new(1,-40,0,36)
+title.Position = UDim2.new(0,20,0,24)
+title.BackgroundTransparency = 1
+title.Text = "LIGHT HUB LOADER"
+title.TextColor3 = THEME
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 27
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local subtitle = Instance.new("TextLabel", card)
+subtitle.Size = UDim2.new(1,-40,0,20)
+subtitle.Position = UDim2.new(0,20,0,60)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "INITIALIZING..."
+subtitle.TextColor3 = THEME_SOFT
+subtitle.Font = Enum.Font.GothamBold
+subtitle.TextSize = 12
+subtitle.TextXAlignment = Enum.TextXAlignment.Left
+
+-- PROGRESS BAR
+local barBack = Instance.new("Frame", card)
+barBack.Size = UDim2.new(1,-40,0,10)
+barBack.Position = UDim2.new(0,20,1,-52)
+barBack.BackgroundColor3 = DIM
+barBack.BorderSizePixel = 0
+barBack.ClipsDescendants = true
+round(barBack,20)
+
+local barFill = Instance.new("Frame", barBack)
+barFill.Size = UDim2.new(0,0,1,0)
+barFill.BackgroundColor3 = THEME
+barFill.BorderSizePixel = 0
+round(barFill,20)
+
+local gradient = Instance.new("UIGradient", barFill)
+gradient.Color = ColorSequence.new({ColorSequenceKeypoint.new(0,THEME),ColorSequenceKeypoint.new(0.5,THEME_SOFT),ColorSequenceKeypoint.new(1,THEME)})
+
+local percent = Instance.new("TextLabel", card)
+percent.Size = UDim2.new(0,55,0,20)
+percent.Position = UDim2.new(1,-75,1,-36)
+percent.BackgroundTransparency = 1
+percent.Text = "0%"
+percent.TextColor3 = THEME
+percent.Font = Enum.Font.GothamBold
+percent.TextSize = 13
+percent.TextXAlignment = Enum.TextXAlignment.Right
+
+-- MODULE BOXES
+local modules = {"UI SYSTEM","VISUALS","ANIMATION"}
+local moduleFrames = {}
+for i,name in ipairs(modules) do
+    local box = Instance.new("Frame", card)
+    box.Size = UDim2.new(0,120,0,68)
+    box.Position = UDim2.new(0,20+((i-1)*135),0,112)
+    box.BackgroundColor3 = PANEL
+    box.BorderSizePixel = 0
+    round(box,10)
+    stroke(box,THEME,1,0.35)
+
+    local label = Instance.new("TextLabel", box)
+    label.Size = UDim2.new(1,-16,0,18)
+    label.Position = UDim2.new(0,8,0,9)
+    label.BackgroundTransparency = 1
+    label.Text = name
+    label.TextColor3 = WHITE
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 10
+    label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local status = Instance.new("TextLabel", box)
+    status.Size = UDim2.new(1,-16,0,18)
+    status.Position = UDim2.new(0,8,0,30)
+    status.BackgroundTransparency = 1
+    status.Text = "Waiting"
+    status.TextColor3 = THEME
+    status.Font = Enum.Font.GothamBold
+    status.TextSize = 12
+    status.TextXAlignment = Enum.TextXAlignment.Left
+
+    local miniBack = Instance.new("Frame", box)
+    miniBack.Size = UDim2.new(1,-16,0,4)
+    miniBack.Position = UDim2.new(0,8,1,-12)
+    miniBack.BackgroundColor3 = DIM
+    miniBack.BorderSizePixel = 0
+    miniBack.ClipsDescendants = true
+    round(miniBack,20)
+
+    local miniFill = Instance.new("Frame", miniBack)
+    miniFill.Size = UDim2.new(0,0,1,0)
+    miniFill.BackgroundColor3 = THEME
+    miniFill.BorderSizePixel = 0
+    round(miniFill,20)
+
+    table.insert(moduleFrames,{status=status,fill=miniFill})
+end
+
+-- LOADING ANIMATION
+local running = true
+task.spawn(function()
+    local totalDuration = 10 -- seconds for demo
+    local startTime = os.clock()
+    while running do
+        local elapsed = os.clock()-startTime
+        local progress = math.clamp(elapsed/totalDuration,0,1)
+        barFill.Size = UDim2.new(progress,0,1,0)
+        percent.Text = math.floor(progress*100).."%"
+        for i,mod in ipairs(moduleFrames) do
+            if progress*100 > i*30 then
+                mod.status.Text = "Active"
+                mod.fill.Size = UDim2.new(1,0,1,0)
+            else
+                mod.status.Text = "Loading"
+                mod.fill.Size = UDim2.new(progress,0,1,0)
+            end
+        end
+        if elapsed>=totalDuration then break end
+        task.wait(0.03)
+    end
+    running = false
+    percent.Text = "100%"
+end)
